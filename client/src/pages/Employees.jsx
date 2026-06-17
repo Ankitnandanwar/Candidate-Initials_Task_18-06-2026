@@ -35,7 +35,7 @@ const Employees = () => {
     <div className="animate-fade-in">
       {/* header */}
       <div className="flex flex-col sm:flex-row justify-between items-start
-      sm:items-center gap-4 mb-8">
+        sm:items-center gap-4 mb-8">
         <div>
           <h1 className="page-title">Employees</h1>
           <p className="page-subtitle">Manage your team members</p>
