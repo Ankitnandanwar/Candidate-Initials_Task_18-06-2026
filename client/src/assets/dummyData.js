@@ -288,3 +288,22 @@ export const dummyAttendanceData = [
         updatedAt: "2026-03-13T13:48:42.433Z",
     },
 ];
+
+export function getDayTypeDisplay(record) {
+    if (record.dayType) {
+        const map = {
+            "Full Day": "badge-success",
+            "Three Quarter Day": "bg-blue-100 text-blue-700",
+            "Half Day": "badge-warning",
+            "Short Day": "badge-danger",
+        };
+        return {
+            label: record.dayType,
+            className: map[record.dayType] || "bg-slate-100 text-slate-600",
+        };
+    }
+    if (record.checkIn && !record.checkOut) {
+        return { label: "In Progress", className: "bg-indigo-100 text-indigo-700" };
+    }
+    return { label: "—", className: "" };
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { dummyEmployeeData, DEPARTMENTS } from "../assets/dummyData"
 import { Plus, Search, X } from "lucide-react"
 import EmployeeCard from "../components/EmployeeCard"
@@ -15,17 +15,17 @@ const Employees = () => {
   const [editEmployee, setEditEmployee] = useState(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
 
-  const fetchEmployeeData = async () => {
+  const fetchEmployeeData = useCallback(async () => {
     setLoading(true)
     setEmployeeData(dummyEmployeeData.filter((emp) => (selectedDept ? emp.department === selectedDept : emp)))
     setTimeout(() => {
       setLoading(false)
     }, 1000)
-  }
+  },[selectedDept])
 
   useEffect(() => {
     fetchEmployeeData()
-  }, [])
+  }, [fetchEmployeeData])
 
   const filteredData = employeeData.filter((emp) => `${emp.firstName} ${emp.lastName}
   ${emp.position}`.toLowerCase().includes(search.toLowerCase()))
