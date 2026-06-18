@@ -47,7 +47,6 @@ const Login = () => {
             ))}
           </div>
 
-          {/* Footer */}
         </div>
       </div>
     </div>

@@ -1,5 +1,4 @@
-import { ArrowRightIcon, Building2Icon, CalendarIcon, FileTextIcon, UserIcon } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Building2Icon, CalendarIcon, FileTextIcon, UserIcon } from "lucide-react"
 
 const AdminDashboard = ({data}) => {
 
