@@ -1,25 +1,41 @@
 import { ArrowRightIcon, CalendarIcon, DollarSignIcon, FileTextIcon } from "lucide-react"
-import {Link} from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 const EmployeeDashboard = ({ data }) => {
-    const emp = data.employee;
+    // 1. Resolve user profile structure out of session container
+    const profile = data?.user;
+    const personalLogs = data?.rawLogs || [];
+
+    // 2. Filter attendance history for records matching the current month on the client-side
+    const currentMonthIndex = new Date().getMonth(); // 0-11
+    const currentYear = new Date().getFullYear();
+    
+    const presentDaysThisMonth = personalLogs.filter(log => {
+        if (!log.date) return false;
+        const logDate = new Date(log.date);
+        return logDate.getMonth() === currentMonthIndex && logDate.getFullYear() === currentYear && log.status === "PRESENT";
+    }).length;
+
+    // Fallbacks for data metrics that will be filled out by other specific views
+    const pendingLeavesCount = data?.pendingLeavesCount || 0;
+    const netSalaryValue = data?.payrollSummary?.netSalary || profile?.basicSalary || 0;
 
     const cards = [
         {
             icon: CalendarIcon,
-            value: data.currentMonthAttendence,
+            value: presentDaysThisMonth,
             title: "Days Present",
             subtitle: "This month"
         },
         {
             icon: FileTextIcon,
-            value: data.pendingLeaves,
+            value: pendingLeavesCount,
             title: "Pending Leaves",
             subtitle: "Awaiting approval"
         },
         {
-            icon: DollarSignIcon ,
-            value: data.latestPayslip ? `$${data.latestPayslip.netSalary?.toLocaleString()}`:"N/A",
+            icon: DollarSignIcon,
+            value: netSalaryValue ? `$${netSalaryValue.toLocaleString()}` : "N/A",
             title: "Latest Payslip",
             subtitle: "Most recent payout"
         },
@@ -28,8 +44,10 @@ const EmployeeDashboard = ({ data }) => {
     return (
         <div className='animate-fade-in'>
             <div className='page-header'>
-                <h1 className='page-title'>Welcome, {emp?.firstName}</h1>
-                <p className='page-subtitle'>{emp?.position} - {emp?.department || "No department"}</p>
+                <h1 className='page-title'>Welcome, {profile?.firstName || "Employee"}</h1>
+                <p className='page-subtitle'>
+                    {profile?.role === 'admin' ? 'Administrator' : 'Staff Associate'} — {profile?.email}
+                </p>
             </div>
 
             <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-8'>
@@ -53,11 +71,11 @@ const EmployeeDashboard = ({ data }) => {
 
             <div className='flex flex-col sm:flex-row gap-3'>
                 <Link to="/attendance" className='btn-primary text-center inline-flex
-                items-center justify-center gap-2'>
+                items-center justify-center gap-2 px-4 py-2 rounded bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors'>
                     Mark Attendance <ArrowRightIcon size={14}/>
                 </Link>
 
-                <Link to="/leave" className='btn-secondary text-center'>
+                <Link to="/leave" className='btn-secondary text-center px-4 py-2 rounded border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors'>
                     Apply for Leave
                 </Link>
             </div>

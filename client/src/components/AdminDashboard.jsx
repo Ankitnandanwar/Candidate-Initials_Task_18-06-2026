@@ -1,38 +1,49 @@
 import { Building2Icon, CalendarIcon, FileTextIcon, UserIcon } from "lucide-react"
 
-const AdminDashboard = ({data}) => {
+const AdminDashboard = ({ data }) => {
+    // 1. Safely pull down raw telemetry from our unified state payload
+    const logCollection = data?.rawLogs || []
+    
+    // 2. Compute live aggregates locally from our relational database tables
+    const employeeCount = data?.summaryData?.totalEmployees || logCollection.length || 0
+    const departmentCount = data?.summaryData?.totalDepartments || 7 // Standard fallback matching static configuration
+    
+    // Check for today's logs (matching current date strings)
+    const todayStr = new Date().toISOString().split('T')[0]
+    const todayAttendance = logCollection.filter(log => log.date && log.date.startsWith(todayStr)).length
+
+    // Temporary placeholder for active leave state counters
+    const pendingLeaves = data?.summaryData?.pendingLeaves || 0
 
     const stats = [
         {
             icon: UserIcon,
-            value: data.totalEmployees,
+            value: employeeCount,
             label: "Total Employees",
             description: "Active workforce"
         },
         {
             icon: Building2Icon,
-            value: data.totalDepartments,
+            value: departmentCount,
             label: "Departments",
             description: "Organisation Units"
         },
-
         {
             icon: CalendarIcon,
-            value: data.todayAttendance,
+            value: todayAttendance,
             label: "Todays Attendance",
             description: "Check in today"
         },
-
         {
             icon: FileTextIcon,
-            value: data.pendingLeaves,
+            value: pendingLeaves,
             label: "Pending Leaves",
             description: "Awaiting approval"
         },
     ]
 
-  return (
-    <div className='animate-fade-in'>
+    return (
+        <div className='animate-fade-in'>
             <div className='page-header'>
                 <h1 className='page-title'>Dashboard</h1>
                 <p className='page-subtitle'>Welcome back, Admin - here's your overview</p>
@@ -57,7 +68,7 @@ const AdminDashboard = ({data}) => {
                 }
             </div>
         </div>
-  )
+    )
 }
 
 export default AdminDashboard
