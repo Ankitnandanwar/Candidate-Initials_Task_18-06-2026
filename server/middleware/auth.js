@@ -40,7 +40,7 @@ const protect = async (req, res, next) => {
 // Grant access to specific roles (Role-Based Access Control)
 const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    if (!req.user || !roles.map(r => r.toLowerCase()).includes(req.user.role.toLowerCase())) {
       return res.status(403).json({ 
         message: `Role (${req.user?.role || 'Guest'}) is not authorized to access this resource` 
       });

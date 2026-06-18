@@ -4,6 +4,7 @@ import Loading from "../components/Loading"
 import CheckInButton from "../components/attendance/CheckInButton"
 import AttendanceStats from "../components/attendance/AttendanceStats"
 import AttendanceHistory from "../components/attendance/AttendanceHistory"
+import axios from 'axios'
 
 const Attendence = () => {
 
@@ -11,12 +12,33 @@ const Attendence = () => {
   const [loading,setLoading] = useState(true)
   const [isDeleted,setIsDeleted] = useState(false)
 
-  const fetchData = useCallback(async() =>{
-    setHistory(dummyAttendanceData)
-    setTimeout(()=>{
+  const fetchData = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token")
+      const storedUser = localStorage.getItem("user")
+
+      if (storedUser) {
+        const userObj = JSON.parse(storedUser)
+        // Check if employee record is marked as suspended/inactive
+        if (userObj.status === "inactive" || userObj.isDeleted === true) {
+          setIsDeleted(true)
+        }
+      }
+
+      const response = await axios.get("http://localhost:5000/api/attendance/my-logs", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+
+      // Set history array from response payload
+      setHistory(response.data?.data || [])
+    } catch (error) {
+      console.error("Failed to collect live attendance data history:", error)
+    } finally {
       setLoading(false)
-    },1000)
-  },[])
+    }
+  }, [])
 
   useEffect(()=>{
     fetchData()

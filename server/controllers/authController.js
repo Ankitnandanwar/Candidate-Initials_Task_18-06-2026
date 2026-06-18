@@ -1,19 +1,20 @@
 // controllers/authController.js
 const jwt = require('jsonwebtoken');
+// Require directly from the index map file to use associations
 const { Employee } = require('../models/index');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE
+    expiresIn: process.env.JWT_EXPIRE || '30d'
   });
 };
-
 
 exports.registerEmployee = async (req, res) => {
   const { firstName, lastName, email, password, role, departmentId, phone, emergencyContact } = req.body;
 
   try {
-    const employeeExists = await Employee.findOne({ where: { email } });
+    // Standardize email checks to lowercase
+    const employeeExists = await Employee.findOne({ where: { email: email.toLowerCase() } });
     if (employeeExists) {
       return res.status(400).json({ message: 'Employee with this email already exists' });
     }
@@ -21,9 +22,9 @@ exports.registerEmployee = async (req, res) => {
     const employee = await Employee.create({
       firstName,
       lastName,
-      email,
+      email: email.toLowerCase(),
       password,
-      role,
+      role: role || 'employee',
       departmentId,
       phone,
       emergencyContact
@@ -48,17 +49,22 @@ exports.registerEmployee = async (req, res) => {
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
-  // Form Validation
   if (!email || !password) {
     return res.status(400).json({ message: 'Please provide an email and password' });
   }
 
   try {
-    // Find employee by email
-    const employee = await Employee.findOne({ where: { email } });
+    const employee = await Employee.findOne({ where: { email: email.toLowerCase() } });
 
-    // Verify user and match hashed password
-    if (employee && (await employee.matchPassword(password))) {
+    if (!employee) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // FIX: Check bcrypt first. If it fails, fallback to a direct text check for manual Workbench seeds
+    const isBcryptMatch = await employee.matchPassword(password);
+    const isDirectMatch = (password === employee.password);
+
+    if (isBcryptMatch || isDirectMatch) {
       res.status(200).json({
         success: true,
         token: generateToken(employee.id),
@@ -80,7 +86,6 @@ exports.login = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-    // req.user is populated by the 'protect' middleware
     res.status(200).json({ success: true, data: req.user });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });

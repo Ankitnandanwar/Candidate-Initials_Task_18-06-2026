@@ -1,14 +1,25 @@
 import { useState } from "react"
-import { getDayTypeDisplay } from "../../assets/dummyData"
 import { format } from 'date-fns'
 import { Check, Loader2, X } from "lucide-react"
+import axios from "axios"
 
 const LeaveHistory = ({ leaves, isAdmin, onUpdate }) => {
-
     const [processing, setProcessing] = useState(null)
 
     const handleStatusUpdate = async (id, status) => {
         setProcessing(id)
+        try {
+            const token = localStorage.getItem("token")
+            await axios.put(`http://localhost:5000/api/leaves/${id}/status`, 
+                { status },
+                { headers: { Authorization: `Bearer ${token}` } }
+            )
+            if (onUpdate) onUpdate()
+        } catch (error) {
+            console.error("Failed to alter status code request validation:", error)
+        } finally {
+            setProcessing(null)
+        }
     }
 
     return (
@@ -26,72 +37,58 @@ const LeaveHistory = ({ leaves, isAdmin, onUpdate }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {
-                            leaves.length === 0 ? (
-                                <tr>
-                                    <td colSpan={isAdmin ? 6 : 4} className="text-center py-12 text-slate-400">No leave applications found</td>
-                                </tr>
-                            ) : (
-                                leaves.map((leave) => {
-                                    return (
-                                        <tr key={leave._id || leave.id}>
-                                            {isAdmin && (
-                                                <td className="text-slate-900">
-                                                    {leave.employee?.firstName}
-                                                    {leave.employee?.lastName}
-                                                </td>
-                                            )}
-
-
+                        {leaves.length === 0 ? (
+                            <tr>
+                                <td colSpan={isAdmin ? 6 : 5} className="text-center py-12 text-slate-400">No leave applications found</td>
+                            </tr>
+                        ) : (
+                            leaves.map((leave) => {
+                                const leaveId = leave._id || leave.id;
+                                return (
+                                    <tr key={leaveId}>
+                                        {isAdmin && (
+                                            <td className="text-slate-900">
+                                                {leave.employee?.firstName || ""} {leave.employee?.lastName || ""}
+                                            </td>
+                                        )}
+                                        <td>
+                                            <span className="badge bg-slate-100 text-slate-600">
+                                                {leave.type}
+                                            </span>
+                                        </td>
+                                        <td className="text-xs text-slate-500">
+                                            {format(new Date(leave.startDate), "MMM dd")} - {format(new Date(leave.endDate), "MMM dd, yyyy")}
+                                        </td>
+                                        <td title={leave.reason} className="max-w-xs truncate text-slate-500">
+                                            {leave.reason}
+                                        </td>
+                                        <td>
+                                            <span className={`badge ${leave.status === "APPROVED" ? "badge-success" : leave.status === "REJECTED" ? "badge-danger" : "badge-warning"}`}>
+                                                {leave.status}
+                                            </span>
+                                        </td>
+                                        {isAdmin && (
                                             <td>
-                                                <span className="badge bg-slate-100 text-slate-600">
-                                                    {leave.type}
-                                                </span>
+                                                {leave.status === "PENDING" && (
+                                                    <div className="flex justify-center gap-2">
+                                                        <button onClick={() => handleStatusUpdate(leaveId, "APPROVED")}
+                                                            disabled={!!processing}
+                                                            className="p-1.5 rounded-md bg-emerald-50 text-emerald-500 transition-colors hover:bg-emerald-100">
+                                                            {processing === leaveId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 " />}
+                                                        </button>
+                                                        <button onClick={() => handleStatusUpdate(leaveId, "REJECTED")}
+                                                            disabled={!!processing}
+                                                            className="p-1.5 rounded-md bg-rose-50 text-rose-500 transition-colors hover:bg-rose-100">
+                                                            {processing === leaveId ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4 " />}
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </td>
-                                            <td className="text-xs text-slate-500">
-                                                {format(new Date(leave.startDate), "MMM dd")} -
-                                                {format(new Date(leave.endDate), "MMM dd, yyyy")}
-                                            </td>
-
-                                            <td title={leave.reason}
-                                                className="max-w-xs truncate text-slate-500">
-                                                {leave.reason}
-                                            </td>
-
-                                            <td>
-                                                <span className={`badge ${leave.status === "APPROVED" ?
-                                                    "badge-success" : leave.status === "REJECTED" ? "badge-danger" : "badge-warning"
-                                                    }`}>{leave.status}</span>
-                                            </td>
-
-                                            {isAdmin && (
-                                                <td>
-                                                    {leave.status === "PENDING" && (
-                                                        <div className="flex justify-center gap-2">
-                                                            <button onClick={() => handleStatusUpdate(leave._id || leave.id, "APPROVED")}
-                                                                disabled={!!processing}
-                                                                className="p-1.5 rounded-md bg-emerald-50 text-emerald-500 transition-colors hover:bg-emerald-100">
-                                                                {processing === (leave._id ||
-                                                                    leave.id
-                                                                ) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 " />}
-                                                            </button>
-                                                            <button onClick={() => handleStatusUpdate(leave._id || leave.id, "REJECTED")}
-                                                                disabled={!!processing}
-                                                                className="p-1.5 rounded-md bg-rose-50 text-rose-500 transition-colors hover:bg-rose-100">
-                                                                {processing === (leave._id ||
-                                                                    leave.id
-                                                                ) ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4 " />}
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </td>
-                                            )}
-
-                                        </tr>
-                                    )
-                                })
-                            )
-                        }
+                                        )}
+                                    </tr>
+                                )
+                            })
+                        )}
                     </tbody>
                 </table>
             </div>

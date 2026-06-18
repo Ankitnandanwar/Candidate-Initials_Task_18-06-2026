@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import LoginLeftBar from "./LoginLeftBar"
 import { ArrowLeftIcon, EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react"
-import axios from "axios" // or import API from '../api/axios'
+import axios from "axios"
 
 const LoginForm = ({ role, title, subtitle }) => {
   const [email, setEmail] = useState("")
@@ -19,7 +19,6 @@ const LoginForm = ({ role, title, subtitle }) => {
     setLoading(true)
 
     try {
-      // Connects directly to your Express route
       const response = await axios.post("http://localhost:5000/api/auth/login", {
         email,
         password
@@ -28,8 +27,8 @@ const LoginForm = ({ role, title, subtitle }) => {
       if (response.data.success) {
         const userRole = response.data.user.role
 
-        // Enforce role matching based on which panel they are trying to log into
-        if (userRole !== role) {
+        // FIX: Lowercase both strings to handle 'admin' vs 'Admin' seamlessly
+        if (userRole.toLowerCase() !== role.toLowerCase()) {
           setError(`Access denied. This account does not have ${role} privileges.`)
           setLoading(false)
           return
@@ -115,9 +114,7 @@ const LoginForm = ({ role, title, subtitle }) => {
                 </>
               ) : "Sign in"}
             </button>
-
           </form>
-
         </div>
       </div>
     </div>

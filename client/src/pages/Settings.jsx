@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
-import { dummyProfileData } from "../assets/dummyData"
 import Loading from "../components/Loading"
 import { Lock } from "lucide-react"
 import ProfileForm from "../components/ProfileForm"
+import axios from "axios"
 
 const Settings = () => {
   const [profile, setProfile] = useState(null)
@@ -10,11 +10,18 @@ const Settings = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
 
 
-  const fetchProfile = () => {
-    setProfile(dummyProfileData)
-    setTimeout(() => {
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      const response = await axios.get("http://localhost:5000/api/profile", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setProfile(response.data)
+    } catch (error) {
+      console.error("Error fetching profile details:", error)
+    } finally {
       setLoading(false)
-    }, 1000);
+    }
   }
   useEffect(() => {
     fetchProfile()

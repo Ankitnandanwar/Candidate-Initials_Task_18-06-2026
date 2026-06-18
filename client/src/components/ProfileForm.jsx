@@ -1,5 +1,6 @@
 import { Loader2, Save, User } from "lucide-react"
 import { useState } from "react"
+import axios from "axios"
 
 const ProfileForm = ({ initialData, onSuccess }) => {
 
@@ -9,6 +10,28 @@ const ProfileForm = ({ initialData, onSuccess }) => {
 
     const handleSubmit = async (e) => {
         error.preventDefault()
+        setLoading(true)
+        setError("")
+        setMessage("")
+
+        const formData = new FormData(e.currentTarget)
+        const bio = formData.get("bio")
+
+        try {
+            const token = localStorage.getItem("token")
+            const response = await axios.put("http://localhost:5000/api/profile", 
+                { bio },
+                { headers: { Authorization: `Bearer ${token}` } }
+            )
+            
+            setMessage(response.data?.message || "Changes saved perfectly!")
+            if (onSuccess) onSuccess()
+        } catch (err) {
+            console.error(err)
+            setError(err.response?.data?.message || "Could not save bio update configurations.")
+        } finally {
+            setLoading(false)
+        }
     }
 
 
@@ -38,21 +61,21 @@ const ProfileForm = ({ initialData, onSuccess }) => {
                         <label className="block text-sm font-medium
                             text-slate-700 mb-2">Name</label>
                         <input disabled className="bg-slate-50 text-slate-400 cursor-not-allowed"
-                            value={`${initialData.firstName} ${initialData.lastName}`} />
+                            value={`${initialData?.firstName} ${initialData?.lastName}`} />
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium
                             text-slate-700 mb-2">Email</label>
                         <input disabled className="bg-slate-50 text-slate-400 cursor-not-allowed"
-                            value={initialData.email} />
+                            value={initialData?.email} />
                     </div>
 
                     <div className="sm:col-span-2">
                         <label className="block text-sm font-medium
                             text-slate-700 mb-2">Position</label>
                         <input disabled className="bg-slate-50 text-slate-400 cursor-not-allowed"
-                            value={initialData.position} />
+                            value={initialData?.position} />
                     </div>
                 </div>
 

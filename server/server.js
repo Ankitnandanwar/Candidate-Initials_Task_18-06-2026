@@ -12,6 +12,9 @@ const leaveRoutes = require('./routes/leaveRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
 const payrollRoutes = require('./routes/payrollRoutes');
 
+const employeeRoutes = require('./routes/employeeRoutes');
+const profileRoutes = require('./routes/profileRoutes');
+
 // Load environment variables
 dotenv.config();
 
@@ -27,6 +30,8 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/payroll', payrollRoutes);
+app.use('/api/employees', employeeRoutes);
+app.use('/api/profile', profileRoutes);
 
 // Test Route
 app.get('/', (req, res) => {
@@ -43,7 +48,7 @@ const startServer = async () => {
 
   // 2. Sync Database Models (alter: true updates tables safely during development)
   try {
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ force: true });
     console.log('✔ Database models synchronized.');
     
     // 3. Start Listening for Requests

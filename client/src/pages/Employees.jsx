@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react"
-import { dummyEmployeeData, DEPARTMENTS } from "../assets/dummyData"
+import { DEPARTMENTS } from "../assets/dummyData" // Keeping the constant department list import
 import { Plus, Search, X } from "lucide-react"
 import EmployeeCard from "../components/EmployeeCard"
 import EmployeeForm from "../components/EmployeeForm"
+import axios from "axios"
 
 const Employees = () => {
-
   const [employeeData, setEmployeeData] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -17,31 +17,45 @@ const Employees = () => {
 
   const fetchEmployeeData = useCallback(async () => {
     setLoading(true)
-    setEmployeeData(dummyEmployeeData.filter((emp) => (selectedDept ? emp.department === selectedDept : emp)))
-    setTimeout(() => {
+    try {
+      const token = localStorage.getItem("token")
+      
+      // Builds a query string targeting the department if selected
+      let url = "http://localhost:5000/api/employees"
+      if (selectedDept) {
+        url += `?department=${encodeURIComponent(selectedDept)}`
+      }
+
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      
+      // Support nested payload logic safely
+      setEmployeeData(response.data?.data || response.data || [])
+    } catch (error) {
+      console.error("Failed fetching live employee collection:", error)
+    } finally {
       setLoading(false)
-    }, 1000)
-  },[selectedDept])
+    }
+  }, [selectedDept])
 
   useEffect(() => {
     fetchEmployeeData()
   }, [fetchEmployeeData])
 
-  const filteredData = employeeData.filter((emp) => `${emp.firstName} ${emp.lastName}
-  ${emp.position}`.toLowerCase().includes(search.toLowerCase()))
-
+  const filteredData = employeeData.filter((emp) => 
+    `${emp.firstName} ${emp.lastName} ${emp.position}`.toLowerCase().includes(search.toLowerCase())
+  )
 
   return (
     <div className="animate-fade-in">
       {/* header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start
-        sm:items-center gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="page-title">Employees</h1>
           <p className="page-subtitle">Manage your team members</p>
         </div>
-        <button className="btn-primary flex items-center gap-2 w-full sm:w-auto
-        justify-center" onClick={() => setShowCreateModal(true)}>
+        <button className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center" onClick={() => setShowCreateModal(true)}>
           <Plus size={16} /> Add Employee
         </button>
       </div>
@@ -53,8 +67,7 @@ const Employees = () => {
           <input type="text" placeholder="Search Employees.." className="w-full pl-10"
             onChange={(e) => setSearch(e.target.value)} value={search} />
         </div>
-        <select value={selectedDept} onChange={(e) => setSelectedDept(e.target.value)}
-          className="max-w-40">
+        <select value={selectedDept} onChange={(e) => setSelectedDept(e.target.value)} className="max-w-40">
           <option value="">All Departments</option>
           {DEPARTMENTS.map((item) => (
             <option key={item} value={item}>{item}</option>
@@ -63,91 +76,73 @@ const Employees = () => {
       </div>
 
       {/* employee cards */}
-
       {loading ? (
         <div className="flex justify-center p-12">
           <div className="animate-spin h-8 w-8 border-2 border-indigo-600 border-t-transparent rounded-full" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4
-        gap-4 sm:gap-5">
-          {
-            filteredData.length === 0 ? (
-              <p className="col-span-full text-center py-16 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">No employees found</p>
-            ) : (
-              filteredData.map((item) => (
-                <EmployeeCard key={item.id} employee={item}
-                  onDelete={fetchEmployeeData} onEdit={(e) => setEditEmployee(e)} />
-              ))
-            )
-          }
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+          {filteredData.length === 0 ? (
+            <p className="col-span-full text-center py-16 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">No employees found</p>
+          ) : (
+            filteredData.map((item) => (
+              <EmployeeCard key={item.id || item._id} employee={item}
+                onDelete={fetchEmployeeData} onEdit={(e) => setEditEmployee(e)} />
+            ))
+          )}
         </div>
       )}
 
       {/* Add Employee Modal */}
-      {
-        showCreateModal && (
-          <div className="fixed bg-black/40 backdrop-blur-sm inset-0 
-          z-50 flex items-start justify-center p-4 overflow-y-auto"
-            onClick={() => setShowCreateModal(false)}>
-            <div className="fixed inset-0" />
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full
-            max-w-3xl my-8 animate-fade-in" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between p-6 pb-0">
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-900">Add New Employee</h2>
-                  <p className="text-sm mt-0.5 text-slate-500">Create a user account and employee profile</p>
-                </div>
-                <button onClick={() => setShowCreateModal(false)} className="p-2 rounded-lg hover:bg-slate-100 transition-colors
-                text-slate-400 hover:text-slate-600">
-                  <X className="w-5 h-5" />
-                </button>
+      {showCreateModal && (
+        <div className="fixed bg-black/40 backdrop-blur-sm inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={() => setShowCreateModal(false)}>
+          <div className="fixed inset-0" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8 animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 pb-0">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Add New Employee</h2>
+                <p className="text-sm mt-0.5 text-slate-500">Create a user account and employee profile</p>
               </div>
+              <button onClick={() => setShowCreateModal(false)} className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              <div className="p-6">
-                <EmployeeForm
+            <div className="p-6">
+              <EmployeeForm
                 onSuccess={()=>{
                   setShowCreateModal(false);
                   fetchEmployeeData();
                 }} onCancel={()=>setShowCreateModal(false)}/>
-              </div>
             </div>
           </div>
-        )
-      }
+        </div>
+      )}
 
       {/* Edit Employee Modal */}
-      {
-        editEmployee && (
-          <div className="fixed bg-black/40 backdrop-blur-sm inset-0 
-          z-50 flex items-start justify-center p-4 overflow-y-auto"
-            onClick={() => setEditEmployee(null)}>
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full
-            max-w-3xl my-8 animate-fade-in" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between p-6 pb-0">
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-900">Edit Employee</h2>
-                  <p className="text-sm mt-0.5 text-slate-500">Update employee details</p>
-                </div>
-                <button onClick={() => setEditEmployee(null)} className="p-2 rounded-lg hover:bg-slate-100 transition-colors
-                text-slate-400 hover:text-slate-600">
-                  <X className="w-5 h-5" />
-                </button>
+      {editEmployee && (
+        <div className="fixed bg-black/40 backdrop-blur-sm inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={() => setEditEmployee(null)}>
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8 animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 pb-0">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Edit Employee</h2>
+                <p className="text-sm mt-0.5 text-slate-500">Update employee details</p>
               </div>
+              <button onClick={() => setEditEmployee(null)} className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              <div className="p-6">
-                <EmployeeForm initialData={editEmployee} 
+            <div className="p-6">
+              <EmployeeForm initialData={editEmployee} 
                 onSuccess={()=>{
                   setEditEmployee(null);
                   fetchEmployeeData();
                 }} onCancel={()=>setEditEmployee(null)}/>
-              </div>
             </div>
           </div>
-        )
-      }
-
-
+        </div>
+      )}
     </div>
   )
 }
